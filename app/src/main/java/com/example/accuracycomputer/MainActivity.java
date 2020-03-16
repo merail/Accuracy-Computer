@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,14 +18,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private final int PICK_FILE_RESULT_CODE = 100;
+    private final int PICK_ORIGINAL_FILE_RESULT_CODE = 100;
+    private final int PICK_RECOGNIZED_FILE_RESULT_CODE = 200;
 
-    private String mPath;
+    private TextView mText;
 
     /**
      * Returns a minimal set of characters that have to be removed from (or added to) the respective
@@ -66,16 +71,55 @@ public class MainActivity extends AppCompatActivity {
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
-        Intent file_intent = new Intent(Intent.ACTION_GET_CONTENT);
-        file_intent.setType("text/plain");
-        try {
-            startActivityForResult(file_intent, PICK_FILE_RESULT_CODE);
-        } catch (ActivityNotFoundException e) {
-            Log.e("tag", "No activity can handle picking a file. Showing alternatives.");
-        }
+        Button mOriginalButton = findViewById(R.id.original_button);
+        Button mRecognizedButton = findViewById(R.id.recognized_button);
+        //Find the view by its id
+        mText = findViewById(R.id.text_view);
 
+        mOriginalButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chooseFile(PICK_ORIGINAL_FILE_RESULT_CODE);
+            }
+        });
+
+        mRecognizedButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chooseFile(PICK_RECOGNIZED_FILE_RESULT_CODE);
+            }
+        });
+
+        System.out.println(diff("this is a example", "this is a examp")); // prints (le,)
+        System.out.println(diff("Honda", "Hyundai")); // prints (o,yui)
+        System.out.println(diff("Toyota", "Coyote")); // prints (Ta,Ce)
+        System.out.println(diff("Flomax", "Volmax")); // prints (Fo,Vo)
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (data == null)
+            return;
+        if (requestCode == PICK_ORIGINAL_FILE_RESULT_CODE) {
+            if (resultCode == RESULT_OK) {
+                String path = Objects.requireNonNull(data.getData()).getPath();
+                List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
+                readFile(pathList.get(pathList.size() - 1));
+            }
+        }
+        if (requestCode == PICK_RECOGNIZED_FILE_RESULT_CODE) {
+            if (resultCode == RESULT_OK) {
+                String path = Objects.requireNonNull(data.getData()).getPath();
+                List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
+                readFile(pathList.get(pathList.size() - 1));
+            }
+        }
+    }
+
+    private void readFile(String fileName) {
+        File sdcard = Environment.getExternalStorageDirectory();
         //Get the text file
-        File file = new File(mPath);
+        File file = new File(sdcard, fileName);
 
         //Read text from file
         StringBuilder text = new StringBuilder();
@@ -103,29 +147,27 @@ public class MainActivity extends AppCompatActivity {
             //You'll need to add proper error handling here
         }
 
-        //Find the view by its id
-        TextView tv = findViewById(R.id.text_view);
-
-        //Set the text
-        tv.setText(text.toString());
-
-        System.out.println(diff("this is a example", "this is a examp")); // prints (le,)
-        System.out.println(diff("Honda", "Hyundai")); // prints (o,yui)
-        System.out.println(diff("Toyota", "Coyote")); // prints (Ta,Ce)
-        System.out.println(diff("Flomax", "Volmax")); // prints (Fo,Vo)
+        if(mText.getText().length() != 0)
+        {
+            mText.append("\n\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
+            mText.append(text.toString());
+        }
+        else
+        {
+            //Set the text
+            mText.setText(text.toString());
+        }
     }
 
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (data == null)
-            return;
-        if (requestCode == PICK_FILE_RESULT_CODE) {
-            if (resultCode == RESULT_OK) {
-                mPath = Objects.requireNonNull(data.getData()).getPath();
-                Log.d("path", mPath);
-                //FilePath is your file as a string
-            }
+    private void chooseFile(int result_code) {
+        Intent file_intent = new Intent(Intent.ACTION_GET_CONTENT);
+        file_intent.setType("text/plain");
+        try {
+            startActivityForResult(file_intent, result_code);
+        } catch (ActivityNotFoundException e) {
+            Log.e("tag", "No activity can handle picking a file. Showing alternatives.");
         }
+
     }
 
     public static class Pair<T> {

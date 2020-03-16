@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AccuracyComputer</string>
+    <string name="choose_original">Choose original</string>
+    <string name="choose_recognized">Choose recognized</string>
 </resources>
