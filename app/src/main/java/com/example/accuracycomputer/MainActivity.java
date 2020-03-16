@@ -30,6 +30,11 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mText;
 
+    private String mOriginalText;
+    private String mRecognizedText;
+
+    private int mK = 0;
+
     /**
      * Returns a minimal set of characters that have to be removed from (or added to) the respective
      * strings to make the strings equal.
@@ -104,19 +109,25 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 String path = Objects.requireNonNull(data.getData()).getPath();
                 List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
-                readFile(pathList.get(pathList.size() - 1));
+                mOriginalText = readFile(pathList.get(pathList.size() - 1));
             }
         }
         if (requestCode == PICK_RECOGNIZED_FILE_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
                 String path = Objects.requireNonNull(data.getData()).getPath();
                 List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
-                readFile(pathList.get(pathList.size() - 1));
+                mRecognizedText = readFile(pathList.get(pathList.size() - 1));
+
+                if (mK == 2) {
+                    Log.d("accuracy", String.valueOf(1 - (float) diff(mOriginalText, mRecognizedText).first.length()/ (float) mOriginalText.length()));
+                }
             }
         }
     }
 
-    private void readFile(String fileName) {
+    private String readFile(String fileName) {
+        if (mK % 2 == 0)
+            mText.setText("");
         File sdcard = Environment.getExternalStorageDirectory();
         //Get the text file
         File file = new File(sdcard, fileName);
@@ -157,6 +168,10 @@ public class MainActivity extends AppCompatActivity {
             //Set the text
             mText.setText(text.toString());
         }
+
+        mK++;
+
+        return text.toString();
     }
 
     private void chooseFile(int result_code) {
