@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -16,8 +15,11 @@ import androidx.core.app.ActivityCompat;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -95,10 +97,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        System.out.println(diff("this is a example", "this is a examp")); // prints (le,)
-        System.out.println(diff("Honda", "Hyundai")); // prints (o,yui)
-        System.out.println(diff("Toyota", "Coyote")); // prints (Ta,Ce)
-        System.out.println(diff("Flomax", "Volmax")); // prints (Fo,Vo)
+        //System.out.println(diff("this is a example", "this is a examp")); // prints (le,)
+        //System.out.println(diff("Honda", "Hyundai")); // prints (o,yui)
+        //System.out.println(diff("Toyota", "Coyote")); // prints (Ta,Ce)
+        //System.out.println(diff("Flomax", "Volmax")); // prints (Fo,Vo)
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -108,29 +110,65 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == PICK_ORIGINAL_FILE_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
                 String path = Objects.requireNonNull(data.getData()).getPath();
-                List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
-                mOriginalText = readFile(pathList.get(pathList.size() - 1));
+                List<String> pathList = Arrays.asList(Objects.requireNonNull(path).split("/"));
+                //mOriginalText = readFile(pathList.get(pathList.size() - 1));
+//                Uri url = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.original);
+//
+//                Log.d("aaaaaaaaaaaaaaa", url.getPath());
+//                Log.d("bbbbbbbbbb", new File(url.toString()).getAbsolutePath());
+//                mOriginalText = readFile(new File(url.toString()));
+
+                try {
+                    InputStream inputStream = getResources().openRawResource(R.raw.original);
+                    File tempFile = File.createTempFile("pre", "suf");
+                    copyFile(inputStream, new FileOutputStream(tempFile));
+
+                    mOriginalText = readFile(tempFile);
+                } catch (IOException e) {
+                    throw new RuntimeException("Can't create temp file ", e);
+                }
             }
         }
         if (requestCode == PICK_RECOGNIZED_FILE_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
                 String path = Objects.requireNonNull(data.getData()).getPath();
-                List<String> pathList= Arrays.asList(Objects.requireNonNull(path).split("/"));
-                mRecognizedText = readFile(pathList.get(pathList.size() - 1));
+                List<String> pathList = Arrays.asList(Objects.requireNonNull(path).split("/"));
+                // mRecognizedText = readFile(pathList.get(pathList.size() - 1));
+//                Uri url = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.test);
+//                mRecognizedText = readFile(new File(url.toString()));
+
+                try {
+                    InputStream inputStream = getResources().openRawResource(R.raw.test);
+                    File tempFile = File.createTempFile("pre", "suf");
+                    copyFile(inputStream, new FileOutputStream(tempFile));
+
+                    mRecognizedText = readFile(tempFile);
+                } catch (IOException e) {
+                    throw new RuntimeException("Can't create temp file ", e);
+                }
 
                 if (mK == 2) {
-                    Log.d("accuracy", String.valueOf(1 - (float) diff(mOriginalText, mRecognizedText).first.length()/ (float) mOriginalText.length()));
+                    mText.append("\n\n\naccuracy:\n\n\n");
+                    mText.append("                     " + (1 - (float) diff(mOriginalText, mRecognizedText).first.length() / (float) mOriginalText.length()));
                 }
             }
         }
     }
 
-    private String readFile(String fileName) {
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
+    }
+
+    private String readFile(File file) {
         if (mK % 2 == 0)
             mText.setText("");
-        File sdcard = Environment.getExternalStorageDirectory();
+        //File sdcard = Environment.getExternalStorageDirectory();
         //Get the text file
-        File file = new File(sdcard, fileName);
+        //File file = new File(sdcard, fileName);
 
         //Read text from file
         StringBuilder text = new StringBuilder();
@@ -158,13 +196,10 @@ public class MainActivity extends AppCompatActivity {
             //You'll need to add proper error handling here
         }
 
-        if(mText.getText().length() != 0)
-        {
+        if (mText.getText().length() != 0) {
             mText.append("\n\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
             mText.append(text.toString());
-        }
-        else
-        {
+        } else {
             //Set the text
             mText.setText(text.toString());
         }
