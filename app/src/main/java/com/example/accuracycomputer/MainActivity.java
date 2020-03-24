@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -119,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
 //                mOriginalText = readFile(new File(url.toString()));
 
                 try {
-                    InputStream inputStream = getResources().openRawResource(R.raw.original);
+                    InputStream inputStream = getResources().openRawResource(R.raw.original_citylab);
                     File tempFile = File.createTempFile("pre", "suf");
                     copyFile(inputStream, new FileOutputStream(tempFile));
 
@@ -138,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
 //                mRecognizedText = readFile(new File(url.toString()));
 
                 try {
-                    InputStream inputStream = getResources().openRawResource(R.raw.test);
+                    InputStream inputStream = getResources().openRawResource(R.raw.test_citylab);
                     File tempFile = File.createTempFile("pre", "suf");
                     copyFile(inputStream, new FileOutputStream(tempFile));
 
@@ -149,7 +150,22 @@ public class MainActivity extends AppCompatActivity {
 
                 if (mK == 2) {
                     mText.append("\n\n\naccuracy:\n\n\n");
-                    mText.append("                     " + (1 - (float) diff(mOriginalText, mRecognizedText).first.length() / (float) mOriginalText.length()));
+
+                    int m = 10;
+                    List<Float> prs = new ArrayList<>();
+                    for (int i = 0;i<(m-1);i++)
+                    {
+                        float pr = (1 - ((float)diff(mOriginalText.substring((i*(mOriginalText.length()) / m), ((i+1)*mOriginalText.length()) / m),
+                        mRecognizedText.substring((i*(mRecognizedText.length()) / m), ((i+1)*mRecognizedText.length()) / m)).first.length()) / ((float) mOriginalText.length() / m));
+                        prs.add(pr);
+                    }
+
+                    float sum = 0;
+                    for (int j = 0;j< m - 1;j++) {
+                        sum += prs.get(j);
+                    }
+
+                    mText.append("                     " + sum/(m-1));
                 }
             }
         }
